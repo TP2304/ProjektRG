@@ -3,12 +3,14 @@ import cv2
 
 app = Flask(__name__)
 
-# Simulated detection data
+# Detection data with movement flags
 detection_result = {
-    "detected": False,
-    "x": 0,
-    "y": 0,
-    "z": 0
+    "detected": True,
+    "x": 1,
+    "y": 2,
+    "z": 3,
+    "forward": False,  # Simulate forward movement
+    "backward": True # Simulate backward movement
 }
 
 # Video capture

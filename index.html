@@ -52,7 +52,7 @@
         );
 
         // Dynamic updates based on backend data or mock data
-        const mockData = { detected: true, x: 0, y: 0, z: 0 };
+        const mockData = { detected: true, x: 0, y: 0, z: 0, forward: true, backward: false };
 
         async function updateModelPosition() {
             try {
@@ -61,16 +61,29 @@
 
                 if (personModel && data.detected) {
                     personModel.visible = true;
-                    personModel.position.set(data.x, data.y, data.z);
+
+                    // Update forward/backward movement
+                    if (data.forward) {
+                        personModel.position.z -= 0.1; // Move forward (decrease z)
+                    } else if (data.backward) {
+                        personModel.position.z += 0.1; // Move backward (increase z)
+                    }
                 } else if (personModel) {
                     personModel.visible = false;
                 }
             } catch (error) {
                 console.error('Error fetching detection data:', error);
+
                 // Use mock data for debugging
                 if (personModel) {
                     personModel.visible = true;
-                    personModel.position.set(mockData.x, mockData.y, mockData.z);
+
+                    // Mock forward/backward movement
+                    if (mockData.forward) {
+                        personModel.position.z -= 0.1; // Move forward
+                    } else if (mockData.backward) {
+                        personModel.position.z += 0.1; // Move backward
+                    }
                 }
             }
         }
