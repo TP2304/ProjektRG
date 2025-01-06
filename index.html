@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Visualization</title>
+    <style>
+        body { margin: 0; }
+        canvas { display: block; }
+    </style>
+</head>
+<body>
+    <script src="libs/three.min.js"></script>
+    <script src="libs/OBJLoader.js"></script>
+    <script>
+        // Scene, Camera, and Renderer Setup
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0xeeeeee); // Light grey background
+
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(0, 5, 15); // Default camera position
+        camera.lookAt(new THREE.Vector3(0, 0, 0)); // Focus on the origin
+
+        const renderer = new THREE.WebGLRenderer();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+
+        // Add lighting
+        const light = new THREE.PointLight(0xffffff, 1, 100);
+        light.position.set(10, 10, 10);
+        scene.add(light);
+
+        // Load 3D Models
+        const objLoader = new THREE.OBJLoader();
+        let personModel = null;
+
+        objLoader.load(
+            'clovek.obj',
+            function (object) {
+                personModel = object;
+                personModel.scale.set(0.5, 0.5, 0.5); // Adjust size
+                personModel.position.set(0, 0, 0); // Initial position
+                personModel.visible = true; // Show the model
+                scene.add(personModel);
+
+                console.log('Model loaded successfully!');
+            },
+            undefined,
+            function (error) {
+                console.error('Error loading clovek.obj:', error);
+            }
+        );
+
+        // Dynamic updates based on backend data or mock data
+        const mockData = { detected: true, x: 0, y: 0, z: 0 };
+
+        async function updateModelPosition() {
+            try {
+                const response = await fetch('http://127.0.0.1:5000/detection'); // Backend endpoint
+                const data = await response.json();
+
+                if (personModel && data.detected) {
+                    personModel.visible = true;
+                    personModel.position.set(data.x, data.y, data.z);
+                } else if (personModel) {
+                    personModel.visible = false;
+                }
+            } catch (error) {
+                console.error('Error fetching detection data:', error);
+                // Use mock data for debugging
+                if (personModel) {
+                    personModel.visible = true;
+                    personModel.position.set(mockData.x, mockData.y, mockData.z);
+                }
+            }
+        }
+
+        // Animate the scene
+        function animate() {
+            requestAnimationFrame(animate);
+            updateModelPosition(); // Update the model position
+            renderer.render(scene, camera);
+        }
+
+        // Start animation
+        animate();
+
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    </script>
+</body>
+</html>
