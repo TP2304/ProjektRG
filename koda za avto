@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Visualization</title>
+    <style>
+        body {
+            margin: 0;
+        }
+
+        canvas {
+            display: block;
+        }
+    </style>
+</head>
+
+<body>
+    <script src="libs/three.min.js"></script>
+    <script src="libs/OBJLoader.js"></script>
+    <script>
+        // Scene, Camera, and Renderer Setup
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x87ceeb);
+
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(0, 5, 15); // Default camera position
+        camera.lookAt(new THREE.Vector3(0, 0, 0)); // Focus on the origin
+
+        const renderer = new THREE.WebGLRenderer();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+
+        // Add lighting
+        const light = new THREE.PointLight(0xffffff, 1, 100);
+        light.position.set(10, 10, 10);
+        scene.add(light);
+
+        const objLoader = new THREE.OBJLoader();
+        let carModel = null;
+        let personModel = null;
+
+        function animate() {
+            requestAnimationFrame(animate);
+            renderer.render(scene, camera);
+        }
+
+        // Load car model
+        // Load car model
+objLoader.load(
+    'kolata haubata.obj',
+    function (object) {
+        carModel = object;
+        carModel.scale.set(5, 5, 5); 
+        carModel.position.set(0, -2, 0); 
+        carModel.rotation.y = Math.PI / 2; 
+
+        // Apply red color to the car
+        carModel.traverse((child) => {
+            if (child.isMesh) {
+                child.material = new THREE.MeshStandardMaterial({
+                    color: 0xff0000, // Red color
+                    metalness: 0.5,
+                    roughness: 0.5,
+                });
+            }
+        });
+
+        // Add car to the scene
+        scene.add(carModel);
+
+        // Load the person model inside the car
+        objLoader.load(
+            'clovek.obj',
+            function (object) {
+                personModel = object;
+
+                // Resize the person to be smaller than the car
+                personModel.scale.set(0.5, 0.5, 0.5); // Adjust person size
+
+                // Position the person relative to the car
+                personModel.position.set(0, -0.8, 0); // Center the person inside the car (adjust as needed)
+                personModel.rotation.y= -Math.PI/2;
+                // Add the person as a child of the car
+                carModel.add(personModel);
+
+                console.log('Person model successfully loaded and centered in the car!');
+            },
+            undefined,
+            function (error) {
+                console.error('Error loading clovek.obj:', error);
+            }
+        );
+
+        console.log('Car model successfully loaded!');
+    },
+    undefined,
+    function (error) {
+        console.error('Error loading kolata haubata.obj:', error);
+    }
+);
+
+
+
+        // Dynamic updates based on backend data or mock data
+        const mockData = { detected: true, forward: true, backward: false };
+
+        async function updateModelPosition() {
+            try {
+                const response = await fetch('http://127.0.0.1:5000/detection'); // Backend endpoint
+                const data = await response.json();
+
+                if (carModel) {
+                    if (data.forward) {
+                        carModel.position.z -= 0.1; // Move forward
+                    } else if (data.backward) {
+                        carModel.position.z += 0.1; // Move backward
+                    }
+                }
+            } catch (error) {
+                console.error('Error fetching detection data:', error);
+
+                // Use mock data for debugging
+                if (carModel) {
+                    if (mockData.forward) {
+                        carModel.position.z -= 0.1;
+                    } else if (mockData.backward) {
+                        carModel.position.z += 0.1; 
+                    }
+                }
+            }
+        }
+
+
+        document.addEventListener('keydown', (event) => {
+            const key = event.key;
+
+            if (carModel) { // Preveri, ali je avtomobil naložen
+                switch (key) {
+                    case 'ArrowUp': // Puščica gor - premik naprej
+                        carModel.position.z -= 0.5;
+                        break;
+                    case 'ArrowDown': // Puščica dol - premik nazaj
+                        carModel.position.z += 0.5;
+                        break;
+                    case 'ArrowLeft': // Puščica levo - premik levo
+                        carModel.position.x -= 0.5;
+                        break;
+                    case 'ArrowRight': // Puščica desno - premik desno
+                        carModel.position.x += 0.5;
+                        break;
+                }
+            }
+        });
+        // Start animation
+        animate();
+
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    </script>
+</body>
+
+</html>
