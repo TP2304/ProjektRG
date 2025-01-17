@@ -16,7 +16,7 @@ detection_result = {
 # Video capture
 cap = cv2.VideoCapture(0)
 
-@app.route('/detection')
+@app.route('/detection') # API endpoint za detection data
 def detection():
     # Return detection results as JSON
     return jsonify(detection_result)

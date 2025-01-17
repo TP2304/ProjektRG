@@ -21,7 +21,7 @@
         camera.position.set(0, 5, 15); // Default camera position
         camera.lookAt(new THREE.Vector3(0, 0, 0)); // Focus on the origin
 
-        const renderer = new THREE.WebGLRenderer();
+        const renderer = new THREE.WebGLRenderer(); // Renders 3D graphics to a canvas
         renderer.setSize(window.innerWidth, window.innerHeight);
         document.body.appendChild(renderer.domElement);
 
@@ -74,7 +74,6 @@
             } catch (error) {
                 console.error('Error fetching detection data:', error);
 
-                // Use mock data for debugging
                 if (personModel) {
                     personModel.visible = true;
 
