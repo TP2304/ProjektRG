@@ -30,23 +30,3 @@ Ni 1.500000
 d 1.000000
 illum 2
 map_Kd C:/Users/PC/Downloads/22222.png
-
-newmtl Material.009
-Ns 250.000000
-Ka 1.000000 1.000000 1.000000
-Ks 0.500000 0.500000 0.500000
-Ke 0.000000 0.000000 0.000000
-Ni 1.500000
-d 1.000000
-illum 2
-map_Kd C:/Users/PC/PycharmProjects/pythonProject/Projekt_z_sliki/slika.jpg
-
-newmtl Material.010
-Ns 250.000000
-Ka 0.509259 0.509259 0.509259
-Kd 0.800568 0.441932 0.122210
-Ks 0.500000 0.500000 0.500000
-Ke 0.000000 0.000000 0.000000
-Ni 1.500000
-d 1.000000
-illum 3
