@@ -3,106 +3,138 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Visualization</title>
+    <title>Three.js Scene</title>
     <style>
         body { margin: 0; }
         canvas { display: block; }
+        #person-name {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: white;
+            font-size: 20px;
+            background-color: rgba(0, 0, 0, 0.5);
+            padding: 5px;
+        }
+        #detect-btn {
+            position: absolute;
+            top: 50px;
+            left: 10px;
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            font-size: 16px;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
+    <div id="person-name">Person Detected: None</div>
+    <button id="detect-btn">Check Person</button>
     <script src="libs/three.min.js"></script>
     <script src="libs/OBJLoader.js"></script>
     <script>
-        // Scene, Camera, and Renderer Setup
         const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0xeeeeee); // Light grey background
+        scene.background = new THREE.Color(0x87ceeb);
 
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-        camera.position.set(0, 5, 15); // Default camera position
-        camera.lookAt(new THREE.Vector3(0, 0, 0)); // Focus on the origin
+        camera.position.set(0, 20, 40);
 
-        const renderer = new THREE.WebGLRenderer(); // Renders 3D graphics to a canvas
+        const renderer = new THREE.WebGLRenderer();
         renderer.setSize(window.innerWidth, window.innerHeight);
         document.body.appendChild(renderer.domElement);
 
-        // Add lighting
-        const light = new THREE.PointLight(0xffffff, 1, 100);
-        light.position.set(10, 10, 10);
-        scene.add(light);
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
+        scene.add(ambientLight);
 
-        // Load 3D Models
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+        directionalLight.position.set(50, 50, 50);
+        scene.add(directionalLight);
+
+        let man;
+
         const objLoader = new THREE.OBJLoader();
-        let personModel = null;
+        objLoader.load('ana_kako_covek.obj', (loadedMan) => {
+            loadedMan.traverse((child) => {
+                if (child.isMesh) {
+                    const texture = new THREE.TextureLoader().load('2025-01-18 (1).png');
+                    child.material = new THREE.MeshStandardMaterial({ map: texture });
+                }
+            });
+            loadedMan.scale.set(0.8, 0.8, 0.8);
+            loadedMan.position.set(4, 5, 0);
+            man = loadedMan;
+            scene.add(man);
+        });
 
-        objLoader.load(
-            'clovek.obj',
-            function (object) {
-                personModel = object;
-                personModel.scale.set(0.5, 0.5, 0.5); // Adjust size
-                personModel.position.set(0, 0, 0); // Initial position
-                personModel.visible = true; // Show the model
-                scene.add(personModel);
+        objLoader.load('avto3.obj', (car) => {
+            car.traverse((child) => {
+                if (child.isMesh) {
+                    child.material = new THREE.MeshStandardMaterial({ color: 0x0000ff });
+                }
+            });
+            car.scale.set(2.5, 2.5, 2.5);
+            car.rotation.set(0, 55, 0);
+            car.position.set(0, 0, 0);
+            scene.add(car);
+        });
 
-                console.log('Model loaded successfully!');
-            },
+        objLoader.load('Tjunction.obj', (road) => {
+            road.traverse((child) => {
+                if (child.isMesh) {
+                    child.material = new THREE.MeshStandardMaterial({ color: 0x555555 });
+                }
+            });
+            road.scale.set(20, 20, 20);
+            road.position.set(0, -2, -20);
+            scene.add(road);
+        });
+
+        // Add static image as a larger plane on the street
+        const textureLoader = new THREE.TextureLoader();
+        const staticImageTexture = textureLoader.load(
+            'ana.jpg',
+            () => console.log('Image loaded successfully!'),
             undefined,
-            function (error) {
-                console.error('Error loading clovek.obj:', error);
-            }
+            (err) => console.error('Error loading image:', err)
         );
+        const staticImageMaterial = new THREE.MeshStandardMaterial({ map: staticImageTexture });
+        const staticImagePlane = new THREE.Mesh(new THREE.PlaneGeometry(15, 15), staticImageMaterial); // Larger plane size
+        staticImagePlane.position.set(10, 10, 15); // Adjusted position to be more visible
+        staticImagePlane.rotation.y = 0; // Face the camera
+        scene.add(staticImagePlane);
 
-        // Dynamic updates based on backend data or mock data
-        const mockData = { detected: true, x: 0, y: 0, z: 0, forward: true, backward: false };
-
-        async function updateModelPosition() {
+        document.getElementById('detect-btn').addEventListener('click', async () => {
             try {
-                const response = await fetch('http://127.0.0.1:5000/detection'); // Backend endpoint
+                const response = await fetch('http://127.0.0.1:5000/detection', {
+                    method: 'GET',
+                    mode: 'cors',
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
                 const data = await response.json();
+                const textElement = document.getElementById("person-name");
 
-                if (personModel && data.detected) {
-                    personModel.visible = true;
-
-                    // Update forward/backward movement
-                    if (data.forward) {
-                        personModel.position.z -= 0.1; // Move forward (decrease z)
-                    } else if (data.backward) {
-                        personModel.position.z += 0.1; // Move backward (increase z)
-                    }
-                } else if (personModel) {
-                    personModel.visible = false;
+                if (data.detected) {
+                    textElement.textContent = `Person Detected: ${data.name}`;
+                } else {
+                    textElement.textContent = `Person Detected: ${data.name || "None"}`;
                 }
             } catch (error) {
-                console.error('Error fetching detection data:', error);
-
-                if (personModel) {
-                    personModel.visible = true;
-
-                    // Mock forward/backward movement
-                    if (mockData.forward) {
-                        personModel.position.z -= 0.1; // Move forward
-                    } else if (mockData.backward) {
-                        personModel.position.z += 0.1; // Move backward
-                    }
-                }
+                console.error("Error fetching detection data:", error);
+                alert("Error connecting to the detection server.");
             }
-        }
+        });
 
-        // Animate the scene
         function animate() {
             requestAnimationFrame(animate);
-            updateModelPosition(); // Update the model position
             renderer.render(scene, camera);
         }
-
-        // Start animation
         animate();
-
-        // Handle window resize
-        window.addEventListener('resize', () => {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-        });
     </script>
 </body>
 </html>
