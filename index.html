@@ -70,15 +70,19 @@
         const objLoader = new THREE.OBJLoader();
         let loadedMan = null; // Reference to the loaded person object
 
-        // Load Road
+        // Load Road with the new texture
         objLoader.load('Tjunction.obj', (road) => {
             road.traverse((child) => {
                 if (child.isMesh) {
-                    child.material = new THREE.MeshStandardMaterial({ color: 0x555555 }); // Grey road
+                    const roadTexture = new THREE.TextureLoader().load('sm_5b4f103f666a1.png');
+                    roadTexture.wrapS = THREE.RepeatWrapping;
+                    roadTexture.wrapT = THREE.RepeatWrapping;
+                    roadTexture.repeat.set(4, 4); // Adjust tiling as needed
+                    child.material = new THREE.MeshStandardMaterial({ map: roadTexture });
                 }
             });
             road.scale.set(20, 20, 20);
-            road.position.set(0, -2, -20); // Adjusted position
+            road.position.set(0, -2, -20);
             scene.add(road);
         });
 
@@ -90,8 +94,8 @@
                 }
             });
             car.scale.set(2.5, 2.5, 2.5);
-            car.rotation.set(0, 55, 0); // Adjusted rotation
-            car.position.set(0, 0, 0); // Adjusted position
+            car.rotation.set(0, 55, 0);
+            car.position.set(0, 0, 0);
             scene.add(car);
         });
 
@@ -104,7 +108,7 @@
                 }
             });
             object.scale.set(0.8, 0.8, 0.8);
-            object.position.set(4, 5, 0); // Adjusted position
+            object.position.set(4, 5, 0);
             loadedMan = object; // Store reference to the loaded object
             scene.add(loadedMan);
         });
@@ -115,20 +119,18 @@
         const statusBox = document.getElementById('status-box');
 
         function updateStatus() {
-    if (!loadedMan) return;
+            if (!loadedMan) return;
 
-    const rotationY = (loadedMan.rotation.y + 2 * Math.PI) % (2 * Math.PI); // Normalize rotation to [0, 2π)
+            const rotationY = (loadedMan.rotation.y + 2 * Math.PI) % (2 * Math.PI); // Normalize rotation to [0, 2π)
 
-    // Adjust thresholds for determining the object's orientation
-    if (rotationY >= Math.PI * 15 / 8 || rotationY <= Math.PI / 8) {
-        statusBox.textContent = "Status: Looking Forward";
-    } else if (rotationY > Math.PI / 8 && rotationY <= Math.PI) {
-        statusBox.textContent = "Status: Looking Left";
-    } else if (rotationY > Math.PI && rotationY < Math.PI * 15 / 8) {
-        statusBox.textContent = "Status: Looking Right";
-    }
-}
-
+            if (rotationY >= Math.PI * 15 / 8 || rotationY <= Math.PI / 8) {
+                statusBox.textContent = "Status: Looking Forward";
+            } else if (rotationY > Math.PI / 8 && rotationY <= Math.PI) {
+                statusBox.textContent = "Status: Looking Left";
+            } else if (rotationY > Math.PI && rotationY < Math.PI * 15 / 8) {
+                statusBox.textContent = "Status: Looking Right";
+            }
+        }
 
         rotateLeftBtn.addEventListener('click', () => {
             if (loadedMan) {
